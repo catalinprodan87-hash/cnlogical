@@ -1,0 +1,961 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F1422">
+<title>C &amp; N logical</title>
+<style>
+  :root{
+    --bg:#0F1422; --bg2:#161C2E; --panel:#1B2238; --panel2:#222B45;
+    --line:#2A3350; --line2:#374266;
+    --ink:#EAEDF6; --muted:#8E97B3; --faint:#5C658A;
+    --c:#34D399;          /* correct place */
+    --n:#FBBF24;          /* present, wrong place */
+    --accent:#7C8CF8;     /* primary */
+    --accent-d:#5A6BE0;
+    --danger:#F87171;
+    --radius:14px;
+    --mono:ui-monospace,"SF Mono","Cascadia Mono","Roboto Mono",Menlo,Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    background:radial-gradient(1200px 700px at 50% -10%, #1a2138 0%, var(--bg) 60%);
+    color:var(--ink); font-family:var(--sans);
+    min-height:100dvh; display:flex; flex-direction:column;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .app{flex:1; width:100%; max-width:760px; margin:0 auto; padding:18px 16px 22px; display:flex; flex-direction:column}
+  .screen{display:none; flex:1; flex-direction:column}
+  .screen.active{display:flex; animation:fade .25s ease}
+  @keyframes fade{from{opacity:0; transform:translateY(6px)}to{opacity:1; transform:none}}
+  @media (prefers-reduced-motion:reduce){.screen.active{animation:none}}
+
+  /* ---------- header / brand ---------- */
+  .brand{display:flex; align-items:baseline; gap:.5ch; font-weight:800; letter-spacing:-.5px}
+  .logo{font-family:var(--mono); font-weight:700; letter-spacing:0}
+  .logo .cc{color:var(--c)} .logo .nn{color:var(--n)}
+  .topbar{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px}
+  .topbar .logo{font-size:18px}
+  .topbar .sub{font-size:12px; color:var(--faint)}
+
+  /* ---------- menu ---------- */
+  .hero{display:flex; flex-direction:column; align-items:center; text-align:center; gap:8px; margin:4vh 0 3vh}
+  .hero .logo{font-size:clamp(46px,16vw,84px); line-height:1; text-shadow:0 2px 30px rgba(124,140,248,.18)}
+  .hero .tag{color:var(--muted); font-size:15px; max-width:34ch}
+  .legend{display:flex; gap:18px; margin-top:6px; font-size:13px; color:var(--muted)}
+  .legend b{font-family:var(--mono)}
+  .legend .lc{color:var(--c)} .legend .ln{color:var(--n)}
+  .credit{color:var(--faint); font-size:12px; letter-spacing:.3px}
+
+  .menu{display:flex; flex-direction:column; gap:12px; max-width:420px; width:100%; margin:0 auto}
+  .menu .btn{justify-content:flex-start}
+
+  /* ---------- buttons ---------- */
+  .btn{appearance:none; border:1px solid var(--line2); background:var(--panel); color:var(--ink);
+    font-family:var(--sans); font-size:16px; font-weight:600; padding:15px 16px; border-radius:var(--radius);
+    cursor:pointer; display:flex; align-items:center; gap:12px; transition:transform .06s ease, border-color .15s, background .15s; width:100%}
+  .btn:hover{border-color:var(--accent)} .btn:active{transform:scale(.985)}
+  .btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  .btn.primary{background:linear-gradient(180deg,var(--accent),var(--accent-d)); border-color:transparent; color:#0d1020}
+  .btn.ghost{background:transparent}
+  .btn .ico{width:22px; text-align:center; font-family:var(--mono); color:var(--accent); font-weight:700}
+  .btn.primary .ico{color:#0d1020}
+  .btn-row{display:flex; gap:10px; flex-wrap:wrap}
+  .btn-row .btn{width:auto; flex:1; justify-content:center; min-width:120px}
+  .btn.sm{font-size:13px; padding:10px 12px; font-weight:600}
+
+  .toolbar{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:14px}
+  .toolbar .btn{font-size:12.5px; padding:11px 6px; justify-content:center; gap:6px; flex-direction:column; color:var(--muted)}
+  .toolbar .btn .ico{font-size:15px}
+  .toolbar .btn:hover{color:var(--ink)}
+
+  /* ---------- panels ---------- */
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px}
+  .section-title{font-size:13px; letter-spacing:.5px; text-transform:uppercase; color:var(--faint); margin:0 0 10px; font-weight:700}
+  .hint{color:var(--muted); font-size:14px; line-height:1.5}
+
+  /* target / secret display ---------- */
+  .target{display:flex; align-items:center; justify-content:center; gap:8px; margin:4px 0 2px}
+  .tile{width:clamp(46px,13vw,62px); height:clamp(54px,15vw,72px); border-radius:12px; background:var(--bg2);
+    border:1px solid var(--line2); display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:clamp(26px,7vw,34px); font-weight:700; color:var(--ink)}
+  .tile.q{color:var(--faint)}
+  .tile.reveal{border-color:var(--c); color:var(--c)}
+  .tile.cur{border-color:var(--accent); box-shadow:0 0 0 3px rgba(124,140,248,.18)}
+
+  /* ---------- guess history ---------- */
+  .history{display:flex; flex-direction:column; gap:7px; margin-top:4px}
+  .history.scroll{max-height:34vh; overflow:auto; padding-right:2px}
+  .row{display:flex; align-items:center; gap:10px; background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:8px 10px}
+  .row .idx{color:var(--faint); font-size:12px; width:18px; font-family:var(--mono)}
+  .row .num{font-family:var(--mono); font-size:20px; letter-spacing:3px; font-weight:700}
+  .row .res{margin-left:auto; display:flex; gap:5px}
+  .pip{font-family:var(--mono); font-size:13px; font-weight:700; padding:3px 8px; border-radius:999px; line-height:1}
+  .pip.c{background:rgba(52,211,153,.14); color:var(--c)}
+  .pip.n{background:rgba(251,191,36,.14); color:var(--n)}
+  .pip.zero{background:var(--panel2); color:var(--faint)}
+  .row.win{border-color:var(--c); background:rgba(52,211,153,.08)}
+  .row.prefill{opacity:.78}
+  .empty{color:var(--faint); font-size:13px; text-align:center; padding:14px 0; font-style:italic}
+
+  /* ---------- input + keypad ---------- */
+  .composer{margin-top:auto; padding-top:14px}
+  .slots{display:flex; gap:10px; justify-content:center; margin-bottom:6px}
+  .err{color:var(--danger); font-size:13px; text-align:center; min-height:18px; margin:2px 0 8px}
+  .keypad{display:grid; grid-template-columns:repeat(3,1fr); gap:8px}
+  .key{appearance:none; border:1px solid var(--line2); background:var(--panel2); color:var(--ink);
+    font-family:var(--mono); font-size:22px; font-weight:700; padding:14px 0; border-radius:12px; cursor:pointer; transition:transform .05s, background .12s}
+  .key:active{transform:scale(.94); background:var(--line2)}
+  .key.act{font-family:var(--sans); font-size:15px; font-weight:700}
+  .key.enter{background:linear-gradient(180deg,var(--accent),var(--accent-d)); color:#0d1020; border-color:transparent}
+  .key.del{color:var(--muted)}
+  .key:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+  /* ---------- vs layout ---------- */
+  .vs-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  .side{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:13px; min-width:0}
+  .side h3{margin:0 0 8px; font-size:13px; letter-spacing:.4px; text-transform:uppercase; color:var(--faint); display:flex; align-items:center; gap:7px}
+  .side .dot{width:8px; height:8px; border-radius:50%; background:var(--faint)}
+  .side.turn h3 .dot{background:var(--accent); box-shadow:0 0 0 4px rgba(124,140,248,.2)}
+  .side.turn{border-color:var(--line2)}
+  .mini-target{display:flex; gap:6px; justify-content:center; margin-bottom:10px}
+  .mtile{width:30px; height:38px; border-radius:8px; background:var(--bg2); border:1px solid var(--line2); display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-weight:700; font-size:19px}
+  .mtile.q{color:var(--faint)}
+  .mhist{display:flex; flex-direction:column; gap:6px; max-height:30vh; overflow:auto}
+  .mrow{display:flex; align-items:center; gap:6px; font-family:var(--mono); font-size:15px; background:var(--bg2); border:1px solid var(--line); border-radius:8px; padding:5px 7px}
+  .mrow .mn{letter-spacing:2px; font-weight:700}
+  .mrow .mr{margin-left:auto; display:flex; gap:3px}
+  .mpip{font-size:11px; font-weight:700; padding:2px 6px; border-radius:999px}
+  .mpip.c{background:rgba(52,211,153,.14); color:var(--c)}
+  .mpip.n{background:rgba(251,191,36,.14); color:var(--n)}
+  .mpip.zero{background:var(--panel2); color:var(--faint)}
+  .status{text-align:center; font-size:14px; color:var(--muted); min-height:20px; margin:10px 0 2px; font-weight:600}
+  .status .think::after{content:""; animation:dots 1.2s steps(4,end) infinite}
+  @keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+  @media (max-width:600px){
+    .vs-grid{grid-template-columns:1fr}
+    #vs-comp-side{order:1}
+    #vs-player-side{order:2}
+  }
+
+  /* ---------- result / endgame ---------- */
+  .result{display:flex; flex-direction:column; align-items:center; text-align:center; gap:14px; margin:6vh auto; max-width:460px}
+  .result .big{font-size:clamp(30px,9vw,46px); font-weight:800; letter-spacing:-1px}
+  .result .big.win{color:var(--c)} .result .big.lose{color:var(--danger)} .result .big.draw{color:var(--n)}
+  .result .reveal-line{font-size:15px; color:var(--muted)}
+  .result .reveal-line b{font-family:var(--mono); color:var(--ink); letter-spacing:3px; font-size:18px}
+  .result .sub{color:var(--muted); font-size:15px}
+
+  .levels{display:flex; flex-direction:column; gap:12px; max-width:420px; width:100%; margin:4vh auto 0}
+  .levelcard{text-align:left; flex-direction:column; align-items:flex-start; gap:4px}
+  .levelcard .lt{font-size:17px; font-weight:700}
+  .levelcard .ld{font-size:13px; color:var(--muted); font-weight:500}
+
+  .scorebar{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--muted)}
+  .scorebar b{color:var(--n); font-family:var(--mono)}
+  .badge{font-size:12px; color:var(--faint); background:var(--panel); border:1px solid var(--line); padding:4px 9px; border-radius:999px; font-weight:600}
+
+  .footer{text-align:center; color:var(--faint); font-size:11px; margin-top:18px; letter-spacing:.4px}
+
+  /* combination-lock hero */
+  .dial{display:flex; gap:9px; justify-content:center; margin:4px 0 2px}
+  .dial .col{display:flex; flex-direction:column; align-items:center; gap:2px}
+  .dial .chev{color:var(--faint); font-size:12px; line-height:1; user-select:none}
+  .dial .win{width:clamp(48px,13vw,58px); height:clamp(58px,15vw,70px); border-radius:12px; background:var(--bg2);
+    border:1px solid var(--line2); display:flex; align-items:center; justify-content:center;
+    font-family:var(--mono); font-size:clamp(28px,8vw,36px); font-weight:700; color:var(--accent)}
+  .dial .win.q{color:var(--faint)}
+
+  /* how to play */
+  .howto{max-width:420px; width:100%; margin:16px auto 0}
+  .howto-toggle{display:flex; align-items:center; gap:11px; width:100%; cursor:pointer; background:var(--panel);
+    border:1px solid var(--line); border-radius:var(--radius); padding:14px 15px; color:var(--ink); font-weight:600; font-size:15px; font-family:var(--sans); text-align:left}
+  .howto-toggle .qm{color:var(--accent); font-family:var(--mono); font-weight:700}
+  .howto-toggle .chev{margin-left:auto; transition:transform .2s; color:var(--accent); font-size:13px}
+  .howto.open .howto-toggle{border-radius:var(--radius) var(--radius) 0 0}
+  .howto.open .howto-toggle .chev{transform:rotate(180deg)}
+  .howto-body{display:none; background:var(--panel); border:1px solid var(--line); border-top:0; border-radius:0 0 var(--radius) var(--radius); padding:6px 16px 16px}
+  .howto.open .howto-body{display:block}
+  .howto-body ol{margin:8px 0 0; padding-left:20px; color:var(--muted); font-size:14px; line-height:1.6}
+  .howto-body li{margin-bottom:8px}
+  .howto-body li b{color:var(--ink); font-weight:700}
+  .cluedefs{display:flex; flex-direction:column; gap:6px; margin:9px 0 2px}
+  .cluedefs div{color:var(--muted)}
+  .cluedefs b.lc{color:var(--c); font-family:var(--mono); margin-right:6px}
+  .cluedefs b.ln{color:var(--n); font-family:var(--mono); margin-right:6px}
+  .howto-ex{background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:11px 12px; margin-top:10px; font-size:13.5px; color:var(--muted); line-height:1.65}
+  .howto-ex .num{font-family:var(--mono); color:var(--ink); letter-spacing:2px; font-weight:700}
+  .howto-ex b.lc{color:var(--c); font-family:var(--mono)}
+  .howto-ex b.ln{color:var(--n); font-family:var(--mono)}
+  .howto-note{color:var(--faint); font-size:12.5px; margin-top:11px; line-height:1.6}
+  .howto-note b{color:var(--muted)}
+
+  /* selectable digit slots (type in any order) */
+  .slots .tile{cursor:pointer}
+
+  /* sound toggle */
+  .sndbtn{appearance:none; border:1px solid var(--line2); background:var(--panel); color:var(--muted);
+    width:38px; height:38px; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex:0 0 auto}
+  .sndbtn:hover{color:var(--ink)}
+  .sndbtn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  .sndbtn.on{border-color:var(--accent); color:var(--accent)}
+  .sndbtn .wave{display:none}
+  .sndbtn.on .wave{display:inline}
+  .sndbtn.on .slash{display:none}
+  .menu-top{display:flex; justify-content:flex-end; align-items:center; gap:8px; margin-bottom:2px}
+  .menu-top .lbl{font-size:12px; color:var(--faint)}
+  .topbar .right{display:flex; align-items:center; gap:8px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ MENU ============ -->
+  <section id="screen-menu" class="screen active">
+    <div class="menu-top">
+      <span class="lbl">Sound</span>
+      <button class="sndbtn" onclick="Sound.toggle()" aria-label="Toggle sound">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M11 5 6 9H2v6h4l5 4z"/>
+          <path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M19 5a8 8 0 0 1 0 14"/>
+          <line class="slash" x1="3" y1="3" x2="21" y2="21" stroke="#F87171"/>
+        </svg>
+      </button>
+    </div>
+    <div class="hero">
+      <div class="logo" style="font-size:clamp(34px,11vw,52px)"><span class="cc">C</span> &amp; <span class="nn">N</span> <span style="color:var(--muted); font-weight:500; font-size:.46em; letter-spacing:1px">logical</span></div>
+      <div class="dial" aria-hidden="true">
+        <div class="col"><span class="chev">▲</span><div class="win">7</div><span class="chev">▼</span></div>
+        <div class="col"><span class="chev">▲</span><div class="win q">?</div><span class="chev">▼</span></div>
+        <div class="col"><span class="chev">▲</span><div class="win q">?</div><span class="chev">▼</span></div>
+        <div class="col"><span class="chev">▲</span><div class="win q">?</div><span class="chev">▼</span></div>
+      </div>
+      <div class="tag">Crack the hidden 4-digit number using logic. Fewest guesses wins.</div>
+      <div class="legend">
+        <span><b class="lc">C</b> right digit, right spot</span>
+        <span><b class="ln">N</b> right digit, wrong spot</span>
+      </div>
+    </div>
+    <div class="menu">
+      <button class="btn primary" onclick="startSingle()"><span class="ico">1</span>Single player</button>
+      <button class="btn" onclick="show('screen-vs-level')"><span class="ico">⚔</span>Play vs computer</button>
+      <button class="btn" onclick="startChallenge()"><span class="ico">★</span>Challenges</button>
+      <button class="btn ghost" onclick="quit()"><span class="ico">⏻</span>Quit</button>
+    </div>
+
+    <div class="howto" id="howto">
+      <button class="howto-toggle" onclick="document.getElementById('howto').classList.toggle('open')" aria-label="How to play">
+        <span class="qm">?</span>How to play
+        <span class="chev">▼</span>
+      </button>
+      <div class="howto-body">
+        <ol>
+          <li>A secret <b>4-digit number</b> is hidden — every digit is different, and it never starts with 0.</li>
+          <li>Type a 4-digit guess. After each guess you get two kinds of clue:
+            <div class="cluedefs">
+              <div><b class="lc">C</b>right digit, in the <b>right</b> spot</div>
+              <div><b class="ln">N</b>right digit, in the <b>wrong</b> spot</div>
+            </div>
+          </li>
+          <li>Use the clues to narrow it down and crack the number — the fewer guesses, the better.</li>
+        </ol>
+        <div class="howto-ex">
+          Example — hidden number <span class="num">5837</span>, you guess <span class="num">2874</span> → <b class="lc">1C</b> + <b class="ln">1N</b>.<br>
+          <span class="num">8</span> is correct and in place → <b class="lc">C</b>. <span class="num">7</span> is in the number but misplaced → <b class="ln">N</b>. <span class="num">2</span> and <span class="num">4</span> aren't in it at all.
+        </div>
+        <div class="howto-note">In <b>Play vs computer</b>, you both hide a number and race to crack each other's first.</div>
+      </div>
+    </div>
+
+    <div class="footer">Created and designed by Catalin Prodan</div>
+  </section>
+
+  <!-- ============ SINGLE PLAYER ============ -->
+  <section id="screen-single" class="screen">
+    <div class="topbar">
+      <div class="logo" style="font-size:18px"><span class="cc">C</span>&amp;<span class="nn">N</span> · Single</div>
+      <div class="right">
+        <div class="badge" id="sp-turns">Turn 0</div>
+        <button class="sndbtn" onclick="Sound.toggle()" aria-label="Toggle sound"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M19 5a8 8 0 0 1 0 14"/><line class="slash" x1="3" y1="3" x2="21" y2="21" stroke="#F87171"/></svg></button>
+      </div>
+    </div>
+    <div class="panel">
+      <p class="section-title">Find the hidden number</p>
+      <div class="target" id="sp-target"></div>
+      <p class="hint" style="text-align:center; margin:8px 0 0">4 digits · all different · can't start with 0</p>
+    </div>
+    <p class="section-title" style="margin:16px 0 6px">Your guesses</p>
+    <div class="history scroll" id="sp-history"><div class="empty">No guesses yet — type one below.</div></div>
+
+    <div class="composer" id="sp-composer"></div>
+    <div class="toolbar">
+      <button class="btn" onclick="giveUp('single')"><span class="ico">🏳</span>Give up</button>
+      <button class="btn" onclick="startSingle()"><span class="ico">↻</span>Restart</button>
+      <button class="btn" onclick="show('screen-menu')"><span class="ico">⌂</span>Menu</button>
+      <button class="btn" onclick="quit()"><span class="ico">⏻</span>Quit</button>
+    </div>
+  </section>
+
+  <!-- ============ VS — LEVEL SELECT ============ -->
+  <section id="screen-vs-level" class="screen">
+    <div class="topbar">
+      <div class="logo" style="font-size:18px"><span class="cc">C</span>&amp;<span class="nn">N</span> · Versus</div>
+      <button class="btn sm" style="width:auto" onclick="show('screen-menu')">← Menu</button>
+    </div>
+    <h2 style="text-align:center; font-weight:800; margin:2vh 0 0">Select level</h2>
+    <p class="hint" style="text-align:center">The computer always grades you fairly — the level sets how sharply it hunts <i>your</i> number.</p>
+    <div class="levels">
+      <button class="btn levelcard" onclick="setupVs('easy')"><span class="lt">Easy</span><span class="ld">Plays loosely, forgets clues, makes human slips.</span></button>
+      <button class="btn levelcard" onclick="setupVs('medium')"><span class="lt">Medium</span><span class="ld">Uses the clues, but stumbles now and then.</span></button>
+      <button class="btn levelcard" onclick="setupVs('hard')"><span class="lt">Hard</span><span class="ld">Ruthless deduction — eliminates every impossibility.</span></button>
+    </div>
+  </section>
+
+  <!-- ============ VS — SETUP (enter your number) ============ -->
+  <section id="screen-vs-setup" class="screen">
+    <div class="topbar">
+      <div class="logo" style="font-size:18px"><span class="cc">C</span>&amp;<span class="nn">N</span> · Versus</div>
+      <div class="badge" id="vs-setup-level">Easy</div>
+    </div>
+    <div class="panel" style="margin-top:1vh">
+      <p class="section-title">Set your secret number</p>
+      <p class="hint">The computer will try to crack this. Keep it hidden if someone's watching.</p>
+    </div>
+    <div class="composer" id="vs-composer"></div>
+    <div class="btn-row" style="margin-top:8px">
+      <button class="btn ghost" onclick="show('screen-vs-level')">← Back</button>
+    </div>
+  </section>
+
+  <!-- ============ VS — GAME ============ -->
+  <section id="screen-vs-game" class="screen">
+    <div class="topbar">
+      <div class="logo" style="font-size:18px"><span class="cc">C</span>&amp;<span class="nn">N</span></div>
+      <div class="right">
+        <div class="badge" id="vs-level-badge">Easy</div>
+        <button class="sndbtn" onclick="Sound.toggle()" aria-label="Toggle sound"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M19 5a8 8 0 0 1 0 14"/><line class="slash" x1="3" y1="3" x2="21" y2="21" stroke="#F87171"/></svg></button>
+      </div>
+    </div>
+    <div class="vs-grid">
+      <div class="side" id="vs-player-side">
+        <h3><span class="dot"></span>You</h3>
+        <div class="mini-target" id="vs-comp-target"></div>
+        <div class="mhist" id="vs-player-hist"></div>
+      </div>
+      <div class="side" id="vs-comp-side">
+        <h3><span class="dot"></span>Computer</h3>
+        <div class="mini-target" id="vs-player-target"></div>
+        <div class="mhist" id="vs-comp-hist"></div>
+      </div>
+    </div>
+    <div class="status" id="vs-status"></div>
+    <div class="composer" id="vs-game-composer"></div>
+    <div class="toolbar">
+      <button class="btn" onclick="giveUp('vs')"><span class="ico">🏳</span>Give up</button>
+      <button class="btn" onclick="restartVs()"><span class="ico">↻</span>Restart</button>
+      <button class="btn" onclick="show('screen-menu')"><span class="ico">⌂</span>Menu</button>
+      <button class="btn" onclick="quit()"><span class="ico">⏻</span>Quit</button>
+    </div>
+  </section>
+
+  <!-- ============ CHALLENGES ============ -->
+  <section id="screen-challenge" class="screen">
+    <div class="topbar">
+      <div class="logo" style="font-size:18px"><span class="cc">C</span>&amp;<span class="nn">N</span> · Challenge</div>
+      <div class="right">
+        <div class="scorebar">Streak <b id="ch-streak">0</b><span class="badge" id="ch-best">Best 0</span></div>
+        <button class="sndbtn" onclick="Sound.toggle()" aria-label="Toggle sound"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M19 5a8 8 0 0 1 0 14"/><line class="slash" x1="3" y1="3" x2="21" y2="21" stroke="#F87171"/></svg></button>
+      </div>
+    </div>
+    <div class="panel">
+      <p class="section-title" id="ch-brief">Challenge</p>
+      <div class="target" id="ch-target"></div>
+      <p class="hint" id="ch-rule" style="text-align:center; margin:8px 0 0"></p>
+    </div>
+    <p class="section-title" style="margin:16px 0 6px">Guesses <span id="ch-turncount" style="float:right; color:var(--muted)"></span></p>
+    <div class="history scroll" id="ch-history"></div>
+    <div class="composer" id="ch-composer"></div>
+    <div class="toolbar">
+      <button class="btn" onclick="giveUp('challenge')"><span class="ico">🏳</span>Give up</button>
+      <button class="btn" onclick="startChallenge()"><span class="ico">↻</span>Restart</button>
+      <button class="btn" onclick="show('screen-menu')"><span class="ico">⌂</span>Menu</button>
+      <button class="btn" onclick="quit()"><span class="ico">⏻</span>Quit</button>
+    </div>
+  </section>
+
+  <!-- ============ RESULT ============ -->
+  <section id="screen-result" class="screen">
+    <div class="result" id="result-body"></div>
+  </section>
+
+  <!-- ============ QUIT ============ -->
+  <section id="screen-quit" class="screen">
+    <div class="result">
+      <div class="logo" style="font-size:40px"><span class="cc">C</span>&amp;<span class="nn">N</span></div>
+      <div class="big">Thanks for playing</div>
+      <p class="sub">Come back and out-think the machine anytime.</p>
+      <button class="btn primary" style="max-width:240px" onclick="show('screen-menu')">Back to menu</button>
+    </div>
+    <div class="footer">Created and designed by Catalin Prodan</div>
+  </section>
+
+</div>
+
+<script>
+/* =================== core helpers =================== */
+function grade(secret, guess){
+  let c=0, common=0;
+  for(let i=0;i<4;i++) if(secret[i]===guess[i]) c++;
+  for(let i=0;i<4;i++) if(secret.includes(guess[i])) common++;
+  return {c, n:common-c};
+}
+function genNumber(){
+  const first=[1,2,3,4,5,6,7,8,9];
+  const f=first[Math.floor(Math.random()*9)];
+  const pool=[0,1,2,3,4,5,6,7,8,9].filter(d=>d!==f);
+  const out=[f];
+  for(let k=0;k<3;k++) out.push(pool.splice(Math.floor(Math.random()*pool.length),1)[0]);
+  return out.join('');
+}
+function validate(s){
+  if(s.length!==4) return "Enter all 4 digits";
+  if(s[0]==='0') return "First digit can't be 0";
+  if(new Set(s).size!==4) return "All 4 digits must be different";
+  return null;
+}
+function allCandidates(){
+  const res=[];
+  for(let a=1;a<=9;a++)for(let b=0;b<=9;b++){if(b===a)continue;
+    for(let cc=0;cc<=9;cc++){if(cc===a||cc===b)continue;
+      for(let d=0;d<=9;d++){if(d===a||d===b||d===cc)continue; res.push(`${a}${b}${cc}${d}`);}}}
+  return res;
+}
+function ri(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
+
+/* =================== persistent storage =================== */
+const Store={
+  mem:{},
+  async get(k){ try{const r=await window.storage.get(k); return r?r.value:null;}catch(e){return (k in this.mem)?this.mem[k]:null;} },
+  async set(k,v){ try{await window.storage.set(k,String(v));}catch(e){this.mem[k]=String(v);} }
+};
+
+/* =================== sound + music (default off) =================== */
+const Sound={
+  on:false, ctx:null, master:null, musicTimer:null,
+  async init(){ this.on = (await Store.get('cn_sound'))==='1'; },
+  ensure(){
+    if(!this.ctx){
+      const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return false;
+      this.ctx=new AC(); this.master=this.ctx.createGain(); this.master.gain.value=0.6; this.master.connect(this.ctx.destination);
+    }
+    if(this.ctx.state==='suspended') this.ctx.resume();
+    return true;
+  },
+  tone(freq,dur,type,vol,when){
+    if(!this.on||!this.ensure()) return;
+    const t=this.ctx.currentTime+(when||0);
+    const o=this.ctx.createOscillator(), g=this.ctx.createGain();
+    o.type=type||'sine'; o.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(vol||0.12,t+0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(this.master); o.start(t); o.stop(t+dur+0.03);
+  },
+  key(){ this.tone(320,0.05,'square',0.05); },
+  submit(){ this.tone(480,0.09,'triangle',0.10); },
+  win(){ [523,659,784,1047].forEach((f,i)=>this.tone(f,0.2,'triangle',0.14,i*0.11)); },
+  lose(){ [392,330,262].forEach((f,i)=>this.tone(f,0.28,'sine',0.12,i*0.15)); },
+  draw(){ [523,587].forEach((f,i)=>this.tone(f,0.22,'triangle',0.12,i*0.16)); },
+  startMusic(){
+    if(!this.on||this.musicTimer||!this.ensure()) return;
+    const scale=[392,440,523,587,659,784,880];
+    const self=this;
+    const play=()=>{ if(self.on){ const f=scale[Math.floor(Math.random()*scale.length)]; self.tone(f,2.2,'sine',0.028); } };
+    play(); this.musicTimer=setInterval(play,2600);
+  },
+  stopMusic(){ if(this.musicTimer){ clearInterval(this.musicTimer); this.musicTimer=null; } },
+  async toggle(){
+    this.on=!this.on; await Store.set('cn_sound', this.on?'1':'0');
+    if(this.on){ this.ensure(); this.tone(660,0.1,'triangle',0.1); this.startMusic(); } else { this.stopMusic(); }
+    paintSound();
+  }
+};
+function paintSound(){
+  document.querySelectorAll('.sndbtn').forEach(b=>b.classList.toggle('on',Sound.on));
+}
+
+/* =================== screen routing =================== */
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function quit(){ show('screen-quit'); }
+
+/* =================== reusable composer (selectable slots + keypad) =================== */
+function Composer(mountId, onSubmit){
+  const mount=document.getElementById(mountId);
+  let cells=['','','',''];
+  let active=0;
+  function firstEmpty(){ for(let i=0;i<4;i++) if(cells[i]==='') return i; return -1; }
+  function render(){
+    const slots=cells.map((d,i)=>{
+      const cls = i===active ? 'tile cur' : 'tile';
+      return `<div class="${cls}" data-slot="${i}">${d||''}</div>`;
+    }).join('');
+    mount.innerHTML=`
+      <div class="slots">${slots}</div>
+      <div class="err" id="${mountId}-err"></div>
+      <div class="keypad">
+        ${[1,2,3,4,5,6,7,8,9].map(d=>`<button class="key" data-d="${d}">${d}</button>`).join('')}
+        <button class="key del" data-act="del">⌫</button>
+        <button class="key" data-d="0">0</button>
+        <button class="key enter act" data-act="enter">Enter</button>
+      </div>`;
+    mount.querySelectorAll('.tile[data-slot]').forEach(t=>{
+      t.addEventListener('click',()=>{ if(!api.active)return; active=+t.dataset.slot; render(); });
+    });
+    mount.querySelectorAll('.key').forEach(k=>{
+      k.addEventListener('click',()=>{
+        if(!api.active) return;
+        if(k.dataset.d!==undefined){ type(k.dataset.d); }
+        else if(k.dataset.act==='del'){ del(); }
+        else if(k.dataset.act==='enter'){ submit(); }
+      });
+    });
+    mount.style.opacity = api.active ? '1' : '.4';
+    mount.style.pointerEvents = api.active ? 'auto' : 'none';
+  }
+  function type(d){
+    cells[active]=d;
+    if(active<3) active++;
+    else { const fe=firstEmpty(); if(fe!==-1) active=fe; }
+    Sound.key(); render();
+  }
+  function del(){
+    if(cells[active]!==''){ cells[active]=''; }
+    else if(active>0){ active--; cells[active]=''; }
+    Sound.key(); render();
+  }
+  function submit(){
+    const s=cells.join('');
+    const err=validate(s);
+    if(err){ const e=document.getElementById(mountId+'-err'); if(e)e.textContent=err; return; }
+    cells=['','','','']; active=0; render();
+    Sound.submit();
+    onSubmit(s);
+  }
+  function setError(msg){ const e=document.getElementById(mountId+'-err'); if(e)e.textContent=msg; }
+  function clear(){ cells=['','','','']; active=0; render(); }
+  function setActive(active2){ api.active=active2; render(); }
+  const api={render, clear, setError, submit, setActive, active:true,
+    key(d){ if(!api.active)return; type(d); },
+    backspace(){ if(!api.active)return; del(); },
+    enter(){ if(!api.active)return; submit(); },
+    left(){ if(!api.active)return; active=(active+3)%4; render(); },
+    right(){ if(!api.active)return; active=(active+1)%4; render(); } };
+  render();
+  return api;
+}
+
+/* hardware keyboard -> route to whichever composer is on the active screen */
+let activeComposer=null;
+document.addEventListener('keydown',e=>{
+  if(!activeComposer||!activeComposer.active) return;
+  if(/^[0-9]$/.test(e.key)){ activeComposer.key(e.key); e.preventDefault(); }
+  else if(e.key==='Backspace'){ activeComposer.backspace(); e.preventDefault(); }
+  else if(e.key==='Enter'){ activeComposer.enter(); e.preventDefault(); }
+  else if(e.key==='ArrowLeft'){ activeComposer.left(); e.preventDefault(); }
+  else if(e.key==='ArrowRight'){ activeComposer.right(); e.preventDefault(); }
+});
+
+/* render helpers */
+function targetHTML(container, digits){ // digits: array of char or null
+  container.innerHTML=digits.map(d=> d===null?`<div class="tile q">?</div>`:`<div class="tile reveal">${d}</div>`).join('');
+}
+function pips(res){
+  if(res.c===0&&res.n===0) return `<span class="pip zero">0</span>`;
+  let h='';
+  if(res.c>0) h+=`<span class="pip c">${res.c}C</span>`;
+  if(res.n>0) h+=`<span class="pip n">${res.n}N</span>`;
+  return h;
+}
+function historyRow(idx,num,res,won,prefill){
+  return `<div class="row ${won?'win':''} ${prefill?'prefill':''}">
+    <span class="idx">${idx}</span><span class="num">${num}</span>
+    <span class="res">${pips(res)}</span></div>`;
+}
+
+/* =================== SINGLE PLAYER =================== */
+let sp={secret:'',last:'',turns:0};
+let spComposer=null;
+function startSingle(){
+  let s; do{ s=genNumber(); }while(s===sp.last);
+  sp={secret:s,last:s,turns:0};
+  targetHTML(document.getElementById('sp-target'),[null,null,null,null]);
+  document.getElementById('sp-history').innerHTML='<div class="empty">No guesses yet — type one below.</div>';
+  document.getElementById('sp-turns').textContent='Turn 0';
+  if(!spComposer) spComposer=Composer('sp-composer', spGuess); else spComposer.clear();
+  spComposer.setActive(true);
+  activeComposer=spComposer;
+  show('screen-single');
+}
+function spGuess(g){
+  sp.turns++;
+  const res=grade(sp.secret,g);
+  const won = res.c===4;
+  const list=document.getElementById('sp-history');
+  if(sp.turns===1) list.innerHTML='';
+  list.insertAdjacentHTML('beforeend', historyRow(sp.turns,g,res,won,false));
+  list.scrollTop=list.scrollHeight;
+  document.getElementById('sp-turns').textContent='Turn '+sp.turns;
+  if(won){
+    spComposer.setActive(false);
+    setTimeout(()=>resultSingleWin(sp.turns),350);
+  }
+}
+function resultSingleWin(turns){
+  showResult({
+    cls:'win', title:'YOU WIN',
+    sub:`Cracked in ${turns} ${turns===1?'guess':'guesses'}.`,
+    buttons:[
+      {label:'New game', primary:true, fn:startSingle},
+      {label:'Main menu', fn:()=>show('screen-menu')},
+      {label:'Quit', ghost:true, fn:quit},
+    ]
+  });
+}
+
+/* =================== VS COMPUTER =================== */
+let vs=null;
+let vsSetupComposer=null, vsGameComposer=null;
+const LEVEL_LABEL={easy:'Easy',medium:'Medium',hard:'Hard'};
+
+function setupVs(level){
+  vs={level};
+  document.getElementById('vs-setup-level').textContent=LEVEL_LABEL[level];
+  if(!vsSetupComposer) vsSetupComposer=Composer('vs-composer', vsSetupDone); else vsSetupComposer.clear();
+  vsSetupComposer.setActive(true);
+  activeComposer=vsSetupComposer;
+  show('screen-vs-setup');
+}
+function vsSetupDone(playerSecret){
+  vs.playerSecret=playerSecret;
+  vs.compSecret=genNumber();
+  vs.starter = Math.random()<0.5 ? 'player':'computer';
+  vs.round=1; vs.pos=0; vs.over=false;
+  vs.pHistory=[]; vs.cHistory=[];
+  vs.aiCandidates=allCandidates(); vs.aiPast=new Set();
+  // render base
+  document.getElementById('vs-level-badge').textContent=LEVEL_LABEL[vs.level];
+  document.getElementById('vs-player-hist').innerHTML='';
+  document.getElementById('vs-comp-hist').innerHTML='';
+  targetHTML2('vs-comp-target',[null,null,null,null]);      // computer's hidden number (you hunt)
+  renderPlayerNumber();                                      // your number (shown, computer hunts)
+  if(!vsGameComposer) vsGameComposer=Composer('vs-game-composer', vsPlayerGuess); else vsGameComposer.clear();
+  activeComposer=vsGameComposer;
+  show('screen-vs-game');
+  setTimeout(vsStep, 500);
+}
+function restartVs(){ if(vs) setupVs(vs.level); }
+function targetHTML2(id,digits){
+  document.getElementById(id).innerHTML=digits.map(d=> d===null?`<div class="mtile q">?</div>`:`<div class="mtile">${d}</div>`).join('');
+}
+function renderPlayerNumber(){
+  document.getElementById('vs-player-target').innerHTML=
+    vs.playerSecret.split('').map(d=>`<div class="mtile">${d}</div>`).join('');
+}
+function vsRowHTML(num,res,won){
+  return `<div class="mrow ${won?'':''}" ${won?'style="border-color:var(--c)"':''}>
+    <span class="mn">${num}</span><span class="mr">${pipsMini(res)}</span></div>`;
+}
+function pipsMini(res){
+  if(res.c===0&&res.n===0) return `<span class="mpip zero">0</span>`;
+  let h='';
+  if(res.c>0) h+=`<span class="mpip c">${res.c}C</span>`;
+  if(res.n>0) h+=`<span class="mpip n">${res.n}N</span>`;
+  return h;
+}
+function vsActor(){ return vs.pos===0 ? vs.starter : (vs.starter==='player'?'computer':'player'); }
+function setTurnUI(){
+  const ps=document.getElementById('vs-player-side');
+  const cs=document.getElementById('vs-comp-side');
+  const actor=vsActor();
+  ps.classList.toggle('turn', actor==='player' && !vs.over);
+  cs.classList.toggle('turn', actor==='computer' && !vs.over);
+  const st=document.getElementById('vs-status');
+  if(vs.over){ st.textContent=''; return; }
+  if(actor==='player'){ st.innerHTML='Your turn — guess the computer\u2019s number'; vsGameComposer.setActive(true); }
+  else{ st.innerHTML='<span class="think">Computer thinking</span>'; vsGameComposer.setActive(false); }
+}
+function vsStep(){
+  if(vs.over) return;
+  setTurnUI();
+  const actor=vsActor();
+  if(actor==='computer'){
+    setTimeout(()=>{ vsComputerGuess(); vsAfterMove(); }, 750);
+  }
+  // if player: wait for submit -> vsPlayerGuess
+}
+function vsPlayerGuess(g){
+  if(vs.over) return;
+  if(vsActor()!=='player') return;
+  const res=grade(vs.compSecret,g);
+  const won=res.c===4;
+  vs.pHistory.push({g,res});
+  const list=document.getElementById('vs-player-hist');
+  list.insertAdjacentHTML('beforeend', vsRowHTML(g,res,won));
+  list.scrollTop=list.scrollHeight;
+  if(won) targetHTML2('vs-comp-target', vs.compSecret.split(''));
+  vsAfterMove();
+}
+function vsComputerGuess(){
+  const g=aiPick(vs.level, vs.aiCandidates, vs.aiPast);
+  vs.aiPast.add(g);
+  const res=grade(vs.playerSecret,g);
+  vs.cHistory.push({g,res});
+  vs.aiCandidates=vs.aiCandidates.filter(c=>{const r=grade(c,g); return r.c===res.c&&r.n===res.n;});
+  const list=document.getElementById('vs-comp-hist');
+  list.insertAdjacentHTML('beforeend', vsRowHTML(g,res,res.c===4));
+  list.scrollTop=list.scrollHeight;
+}
+function aiPick(level,cands,past){
+  const randomValid=()=>{ let g,t=0; do{g=genNumber();t++;}while(past.has(g)&&t<60); return g; };
+  if(level==='hard'){ return cands.length?cands[Math.floor(Math.random()*cands.length)]:randomValid(); }
+  if(level==='medium'){ if(Math.random()<0.20||!cands.length) return randomValid(); return cands[Math.floor(Math.random()*cands.length)]; }
+  // easy
+  if(Math.random()<0.55||!cands.length) return randomValid();
+  return cands[Math.floor(Math.random()*cands.length)];
+}
+function vsAfterMove(){
+  vs.pos++;
+  if(vs.pos<2){ vsStep(); return; }
+  // end of round -> evaluate fairly (both made equal attempts)
+  const pSolved = vs.pHistory.length && vs.pHistory[vs.pHistory.length-1].g===vs.compSecret;
+  const cSolved = vs.cHistory.length && vs.cHistory[vs.cHistory.length-1].g===vs.playerSecret;
+  if(pSolved||cSolved){
+    vs.over=true; setTurnUI();
+    let outcome;
+    if(pSolved&&cSolved) outcome='draw';
+    else if(pSolved) outcome='win';
+    else outcome='lose';
+    setTimeout(()=>resultVs(outcome), 450);
+    return;
+  }
+  vs.round++; vs.pos=0; vsStep();
+}
+function resultVs(outcome){
+  const reveal=`<div class="reveal-line">Computer's number was <b>${vs.compSecret}</b></div>
+                <div class="reveal-line">Your number was <b>${vs.playerSecret}</b></div>`;
+  let cls,title,sub;
+  if(outcome==='win'){cls='win'; title='YOU WIN'; sub=`Solved in ${vs.pHistory.length} ${vs.pHistory.length===1?'try':'tries'}.`;}
+  else if(outcome==='lose'){cls='lose'; title='COMPUTER WINS'; sub='It cracked your number first.';}
+  else{cls='draw'; title='DRAW'; sub='Both numbers fell on the same turn.';}
+  showResult({cls,title,sub,extra:reveal,buttons:[
+    {label:'Review board', fn:reviewVs},
+    {label:'Rematch', primary:true, fn:restartVs},
+    {label:'Main menu', fn:()=>show('screen-menu')},
+    {label:'Quit', ghost:true, fn:quit},
+  ]});
+}
+
+/* =================== CHALLENGES =================== */
+let ch=null, chComposer=null;
+let chStreak=0, chBest=0;
+async function loadStreak(){
+  chStreak=parseInt(await Store.get('cn_streak')||'0',10)||0;
+  chBest=parseInt(await Store.get('cn_best')||'0',10)||0;
+  paintStreak();
+}
+function paintStreak(){
+  document.getElementById('ch-streak').textContent=chStreak;
+  document.getElementById('ch-best').textContent='Best '+chBest;
+}
+async function bumpStreak(){
+  chStreak++; if(chStreak>chBest) chBest=chStreak;
+  await Store.set('cn_streak',chStreak); await Store.set('cn_best',chBest);
+  paintStreak();
+}
+async function resetStreak(){
+  chStreak=0; await Store.set('cn_streak',0); paintStreak();
+}
+async function startChallenge(){
+  await loadStreak();
+  const type = Math.random()<0.5 ? 'passed' : 'reveal';
+  const secret=genNumber();
+  if(type==='passed'){
+    const passed=ri(1,5);
+    const remaining=6-passed;
+    // how many distinct numbers may still be consistent and still fit the turns left
+    const maxCands={1:1,2:2,3:10,4:120,5:9999}[remaining];
+    let prefill, tries=0;
+    do{
+      const used=new Set(); prefill=[];
+      for(let i=0;i<passed;i++){
+        let g; do{ g=genNumber(); }while(g===secret||used.has(g)); used.add(g);
+        prefill.push({g,res:grade(secret,g)});
+      }
+      // count numbers consistent with these clues
+      var consistent=allCandidates().filter(c=>prefill.every(p=>{const r=grade(c,p.g);return r.c===p.res.c&&r.n===p.res.n;})).length;
+      tries++;
+    }while(consistent>maxCands && tries<400);
+    ch={type,secret,allowed:remaining,used:passed,prefill,reveal:null,done:false};
+  }else{
+    const revealCount = Math.random()<0.5?1:2;
+    const allowed = revealCount===1?5:3;
+    const positions=[0,1,2,3];
+    const shown=[];
+    for(let i=0;i<revealCount;i++) shown.push(positions.splice(Math.floor(Math.random()*positions.length),1)[0]);
+    const revealMap=[null,null,null,null];
+    shown.forEach(p=>revealMap[p]=secret[p]);
+    ch={type,secret,allowed,used:0,prefill:[],reveal:revealMap,done:false};
+  }
+  renderChallenge();
+  if(!chComposer) chComposer=Composer('ch-composer', chGuess); else chComposer.clear();
+  chComposer.setActive(true);
+  activeComposer=chComposer;
+  show('screen-challenge');
+}
+function renderChallenge(){
+  const brief=document.getElementById('ch-brief');
+  const rule=document.getElementById('ch-rule');
+  const tgt=document.getElementById('ch-target');
+  const list=document.getElementById('ch-history');
+  if(ch.type==='passed'){
+    brief.textContent='Mid-game · pick up the trail';
+    targetHTML(tgt,[null,null,null,null]);
+    rule.textContent=`${ch.used} ${ch.used===1?'turn has':'turns have'} already passed. Crack it in ${ch.allowed} more.`;
+    list.innerHTML='';
+    ch.prefill.forEach((row,i)=> list.insertAdjacentHTML('beforeend', historyRow(i+1,row.g,row.res,false,true)));
+  }else{
+    brief.textContent='Partial intel · digits exposed';
+    targetHTML(tgt, ch.reveal);
+    const cnt=ch.reveal.filter(x=>x!==null).length;
+    rule.textContent=`${cnt} digit${cnt>1?'s':''} revealed in place. Crack it in ${ch.allowed} turns.`;
+    list.innerHTML='<div class="empty">Your move.</div>';
+  }
+  updateChTurns();
+}
+function updateChTurns(){
+  const made=ch.guesses?ch.guesses:0;
+  document.getElementById('ch-turncount').textContent=`${made}/${ch.allowed}`;
+}
+function chGuess(g){
+  if(ch.done) return;
+  ch.guesses=(ch.guesses||0)+1;
+  const res=grade(ch.secret,g);
+  const won=res.c===4;
+  const list=document.getElementById('ch-history');
+  if(ch.type==='reveal' && ch.guesses===1) list.innerHTML='';
+  const idx = (ch.type==='passed'? ch.used : 0) + ch.guesses;
+  list.insertAdjacentHTML('beforeend', historyRow(idx,g,res,won,false));
+  list.scrollTop=list.scrollHeight;
+  updateChTurns();
+  if(won){ ch.done=true; chComposer.setActive(false); setTimeout(challengeSolved,350); return; }
+  if(ch.guesses>=ch.allowed){ ch.done=true; chComposer.setActive(false); setTimeout(()=>challengeFailed(false),350); }
+}
+async function challengeSolved(){
+  await bumpStreak();
+  showResult({cls:'win', title:'Solved!', sub:`Challenge cracked. Streak: ${chStreak}.`,
+    buttons:[
+      {label:'Next challenge', primary:true, fn:startChallenge},
+      {label:'Main menu', fn:()=>show('screen-menu')},
+    ]});
+}
+async function challengeFailed(gaveUp){
+  await resetStreak();
+  showResult({cls:'lose', title:'Be more logical next time',
+    sub:`The number was ${ch?ch.secret:''}. Streak reset to 0.`,
+    buttons:[
+      {label:'Review guesses', fn:reviewChallenge},
+      {label:'Restart', primary:true, fn:startChallenge},
+      {label:'Main menu', fn:()=>show('screen-menu')},
+    ]});
+}
+
+/* =================== GIVE UP =================== */
+function giveUp(mode){
+  if(mode==='single'){
+    spComposer.setActive(false);
+    showResult({cls:'lose', title:'Be more logical next time',
+      sub:`The hidden number was ${sp.secret}.`,
+      buttons:[
+        {label:'Review guesses', fn:reviewSingle},
+        {label:'New game', primary:true, fn:startSingle},
+        {label:'Main menu', fn:()=>show('screen-menu')},
+        {label:'Quit', ghost:true, fn:quit},
+      ]});
+  } else if(mode==='vs'){
+    if(vs) vs.over=true;
+    showResult({cls:'lose', title:'Be more logical next time',
+      sub:'You conceded the duel.',
+      extra:vs?`<div class="reveal-line">Computer's number was <b>${vs.compSecret}</b></div>`:'',
+      buttons:[
+        {label:'Review board', fn:reviewVs},
+        {label:'Rematch', primary:true, fn:restartVs},
+        {label:'Main menu', fn:()=>show('screen-menu')},
+        {label:'Quit', ghost:true, fn:quit},
+      ]});
+  } else if(mode==='challenge'){
+    if(ch) ch.done=true;
+    if(chComposer) chComposer.setActive(false);
+    challengeFailed(true);
+  }
+}
+
+/* =================== REVIEW (after a loss, study the board) =================== */
+function reviewSingle(){
+  targetHTML(document.getElementById('sp-target'), sp.secret.split(''));
+  if(spComposer) spComposer.setActive(false);
+  activeComposer=null;
+  show('screen-single');
+}
+function reviewVs(){
+  if(!vs) return;
+  vs.over=true;
+  targetHTML2('vs-comp-target', vs.compSecret.split(''));
+  if(vsGameComposer) vsGameComposer.setActive(false);
+  document.getElementById('vs-player-side').classList.remove('turn');
+  document.getElementById('vs-comp-side').classList.remove('turn');
+  document.getElementById('vs-status').textContent='Review — the number above was the computer\u2019s.';
+  activeComposer=null;
+  show('screen-vs-game');
+}
+function reviewChallenge(){
+  if(!ch) return;
+  targetHTML(document.getElementById('ch-target'), ch.secret.split(''));
+  if(chComposer) chComposer.setActive(false);
+  activeComposer=null;
+  show('screen-challenge');
+}
+
+/* =================== RESULT screen builder =================== */
+function showResult({cls,title,sub,extra,buttons}){
+  if(cls==='win') Sound.win(); else if(cls==='lose') Sound.lose(); else if(cls==='draw') Sound.draw();
+  const body=document.getElementById('result-body');
+  const btns=buttons.map((b,i)=>{
+    const c = b.primary?'btn primary':(b.ghost?'btn ghost':'btn');
+    return `<button class="${c}" data-i="${i}" style="max-width:280px">${b.label}</button>`;
+  }).join('');
+  body.innerHTML=`
+    <div class="big ${cls}">${title}</div>
+    ${sub?`<p class="sub">${sub}</p>`:''}
+    ${extra||''}
+    <div style="display:flex; flex-direction:column; gap:10px; width:100%; align-items:center; margin-top:6px">${btns}</div>`;
+  body.querySelectorAll('button').forEach(el=>{
+    el.addEventListener('click',()=>buttons[+el.dataset.i].fn());
+  });
+  activeComposer=null;
+  show('screen-result');
+}
+
+/* boot */
+loadStreak();
+Sound.init().then(paintSound);
+document.addEventListener('pointerdown', ()=>{ if(Sound.on){ Sound.ensure(); Sound.startMusic(); } }, {once:true});
+</script>
+</body>
+</html>
