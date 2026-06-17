@@ -137,6 +137,8 @@
   @keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
   @media (max-width:600px){
     .vs-grid{grid-template-columns:1fr}
+    #vs-comp-side{order:1}
+    #vs-player-side{order:2}
   }
 
   /* ---------- result / endgame ---------- */
@@ -190,6 +192,22 @@
   .howto-ex b.ln{color:var(--n); font-family:var(--mono)}
   .howto-note{color:var(--faint); font-size:12.5px; margin-top:11px; line-height:1.6}
   .howto-note b{color:var(--muted)}
+
+  /* selectable digit slots (type in any order) */
+  .slots .tile{cursor:pointer}
+
+  /* sound toggle */
+  .sndbtn{appearance:none; border:1px solid var(--line2); background:var(--panel); color:var(--muted);
+    width:38px; height:38px; border-radius:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; flex:0 0 auto}
+  .sndbtn:hover{color:var(--ink)}
+  .sndbtn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  .sndbtn.on{border-color:var(--accent); color:var(--accent)}
+  .sndbtn .wave{display:none}
+  .sndbtn.on .wave{display:inline}
+  .sndbtn.on .slash{display:none}
+  .menu-top{display:flex; justify-content:flex-end; align-items:center; gap:8px; margin-bottom:2px}
+  .menu-top .lbl{font-size:12px; color:var(--faint)}
+  .topbar .right{display:flex; align-items:center; gap:8px}
 </style>
 </head>
 <body>
@@ -197,6 +215,16 @@
 
   <!-- ============ MENU ============ -->
   <section id="screen-menu" class="screen active">
+    <div class="menu-top">
+      <span class="lbl">Sound</span>
+      <button class="sndbtn" onclick="Sound.toggle()" aria-label="Toggle sound">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M11 5 6 9H2v6h4l5 4z"/>
+          <path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M19 5a8 8 0 0 1 0 14"/>
+          <line class="slash" x1="3" y1="3" x2="21" y2="21" stroke="#F87171"/>
+        </svg>
+      </button>
+    </div>
     <div class="hero">
       <div class="logo" style="font-size:clamp(34px,11vw,52px)"><span class="cc">C</span> &amp; <span class="nn">N</span> <span style="color:var(--muted); font-weight:500; font-size:.46em; letter-spacing:1px">logical</span></div>
       <div class="dial" aria-hidden="true">
@@ -249,7 +277,10 @@
   <section id="screen-single" class="screen">
     <div class="topbar">
       <div class="logo" style="font-size:18px"><span class="cc">C</span>&amp;<span class="nn">N</span> · Single</div>
-      <div class="badge" id="sp-turns">Turn 0</div>
+      <div class="right">
+        <div class="badge" id="sp-turns">Turn 0</div>
+        <button class="sndbtn" onclick="Sound.toggle()" aria-label="Toggle sound"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M19 5a8 8 0 0 1 0 14"/><line class="slash" x1="3" y1="3" x2="21" y2="21" stroke="#F87171"/></svg></button>
+      </div>
     </div>
     <div class="panel">
       <p class="section-title">Find the hidden number</p>
@@ -303,7 +334,10 @@
   <section id="screen-vs-game" class="screen">
     <div class="topbar">
       <div class="logo" style="font-size:18px"><span class="cc">C</span>&amp;<span class="nn">N</span></div>
-      <div class="badge" id="vs-level-badge">Easy</div>
+      <div class="right">
+        <div class="badge" id="vs-level-badge">Easy</div>
+        <button class="sndbtn" onclick="Sound.toggle()" aria-label="Toggle sound"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M19 5a8 8 0 0 1 0 14"/><line class="slash" x1="3" y1="3" x2="21" y2="21" stroke="#F87171"/></svg></button>
+      </div>
     </div>
     <div class="vs-grid">
       <div class="side" id="vs-player-side">
@@ -331,7 +365,10 @@
   <section id="screen-challenge" class="screen">
     <div class="topbar">
       <div class="logo" style="font-size:18px"><span class="cc">C</span>&amp;<span class="nn">N</span> · Challenge</div>
-      <div class="scorebar">Streak <b id="ch-streak">0</b><span class="badge" id="ch-best">Best 0</span></div>
+      <div class="right">
+        <div class="scorebar">Streak <b id="ch-streak">0</b><span class="badge" id="ch-best">Best 0</span></div>
+        <button class="sndbtn" onclick="Sound.toggle()" aria-label="Toggle sound"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M19 5a8 8 0 0 1 0 14"/><line class="slash" x1="3" y1="3" x2="21" y2="21" stroke="#F87171"/></svg></button>
+      </div>
     </div>
     <div class="panel">
       <p class="section-title" id="ch-brief">Challenge</p>
@@ -405,6 +442,51 @@ const Store={
   async set(k,v){ try{await window.storage.set(k,String(v));}catch(e){this.mem[k]=String(v);} }
 };
 
+/* =================== sound + music (default off) =================== */
+const Sound={
+  on:false, ctx:null, master:null, musicTimer:null,
+  async init(){ this.on = (await Store.get('cn_sound'))==='1'; },
+  ensure(){
+    if(!this.ctx){
+      const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return false;
+      this.ctx=new AC(); this.master=this.ctx.createGain(); this.master.gain.value=0.6; this.master.connect(this.ctx.destination);
+    }
+    if(this.ctx.state==='suspended') this.ctx.resume();
+    return true;
+  },
+  tone(freq,dur,type,vol,when){
+    if(!this.on||!this.ensure()) return;
+    const t=this.ctx.currentTime+(when||0);
+    const o=this.ctx.createOscillator(), g=this.ctx.createGain();
+    o.type=type||'sine'; o.frequency.value=freq;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(vol||0.12,t+0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(this.master); o.start(t); o.stop(t+dur+0.03);
+  },
+  key(){ this.tone(320,0.05,'square',0.05); },
+  submit(){ this.tone(480,0.09,'triangle',0.10); },
+  win(){ [523,659,784,1047].forEach((f,i)=>this.tone(f,0.2,'triangle',0.14,i*0.11)); },
+  lose(){ [392,330,262].forEach((f,i)=>this.tone(f,0.28,'sine',0.12,i*0.15)); },
+  draw(){ [523,587].forEach((f,i)=>this.tone(f,0.22,'triangle',0.12,i*0.16)); },
+  startMusic(){
+    if(!this.on||this.musicTimer||!this.ensure()) return;
+    const scale=[392,440,523,587,659,784,880];
+    const self=this;
+    const play=()=>{ if(self.on){ const f=scale[Math.floor(Math.random()*scale.length)]; self.tone(f,2.2,'sine',0.028); } };
+    play(); this.musicTimer=setInterval(play,2600);
+  },
+  stopMusic(){ if(this.musicTimer){ clearInterval(this.musicTimer); this.musicTimer=null; } },
+  async toggle(){
+    this.on=!this.on; await Store.set('cn_sound', this.on?'1':'0');
+    if(this.on){ this.ensure(); this.tone(660,0.1,'triangle',0.1); this.startMusic(); } else { this.stopMusic(); }
+    paintSound();
+  }
+};
+function paintSound(){
+  document.querySelectorAll('.sndbtn').forEach(b=>b.classList.toggle('on',Sound.on));
+}
+
 /* =================== screen routing =================== */
 function show(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -413,14 +495,16 @@ function show(id){
 }
 function quit(){ show('screen-quit'); }
 
-/* =================== reusable composer (slots + keypad) =================== */
+/* =================== reusable composer (selectable slots + keypad) =================== */
 function Composer(mountId, onSubmit){
   const mount=document.getElementById(mountId);
-  let val="";
+  let cells=['','','',''];
+  let active=0;
+  function firstEmpty(){ for(let i=0;i<4;i++) if(cells[i]==='') return i; return -1; }
   function render(){
-    const slots=[0,1,2,3].map(i=>{
-      const cls = i===val.length ? 'tile cur' : 'tile';
-      return `<div class="${cls}">${val[i]??''}</div>`;
+    const slots=cells.map((d,i)=>{
+      const cls = i===active ? 'tile cur' : 'tile';
+      return `<div class="${cls}" data-slot="${i}">${d||''}</div>`;
     }).join('');
     mount.innerHTML=`
       <div class="slots">${slots}</div>
@@ -431,30 +515,48 @@ function Composer(mountId, onSubmit){
         <button class="key" data-d="0">0</button>
         <button class="key enter act" data-act="enter">Enter</button>
       </div>`;
+    mount.querySelectorAll('.tile[data-slot]').forEach(t=>{
+      t.addEventListener('click',()=>{ if(!api.active)return; active=+t.dataset.slot; render(); });
+    });
     mount.querySelectorAll('.key').forEach(k=>{
       k.addEventListener('click',()=>{
         if(!api.active) return;
-        if(k.dataset.d!==undefined){ if(val.length<4){val+=k.dataset.d; render();} }
-        else if(k.dataset.act==='del'){ val=val.slice(0,-1); render(); }
+        if(k.dataset.d!==undefined){ type(k.dataset.d); }
+        else if(k.dataset.act==='del'){ del(); }
         else if(k.dataset.act==='enter'){ submit(); }
       });
     });
     mount.style.opacity = api.active ? '1' : '.4';
     mount.style.pointerEvents = api.active ? 'auto' : 'none';
   }
+  function type(d){
+    cells[active]=d;
+    if(active<3) active++;
+    else { const fe=firstEmpty(); if(fe!==-1) active=fe; }
+    Sound.key(); render();
+  }
+  function del(){
+    if(cells[active]!==''){ cells[active]=''; }
+    else if(active>0){ active--; cells[active]=''; }
+    Sound.key(); render();
+  }
   function submit(){
-    const err=validate(val);
+    const s=cells.join('');
+    const err=validate(s);
     if(err){ const e=document.getElementById(mountId+'-err'); if(e)e.textContent=err; return; }
-    const v=val; val=""; render();
-    onSubmit(v);
+    cells=['','','','']; active=0; render();
+    Sound.submit();
+    onSubmit(s);
   }
   function setError(msg){ const e=document.getElementById(mountId+'-err'); if(e)e.textContent=msg; }
-  function clear(){ val=""; render(); }
-  function setActive(active){ api.active=active; render(); }
+  function clear(){ cells=['','','','']; active=0; render(); }
+  function setActive(active2){ api.active=active2; render(); }
   const api={render, clear, setError, submit, setActive, active:true,
-    key(d){ if(!api.active)return; if(val.length<4){val+=d; render();} },
-    backspace(){ if(!api.active)return; val=val.slice(0,-1); render(); },
-    enter(){ if(!api.active)return; submit(); } };
+    key(d){ if(!api.active)return; type(d); },
+    backspace(){ if(!api.active)return; del(); },
+    enter(){ if(!api.active)return; submit(); },
+    left(){ if(!api.active)return; active=(active+3)%4; render(); },
+    right(){ if(!api.active)return; active=(active+1)%4; render(); } };
   render();
   return api;
 }
@@ -466,6 +568,8 @@ document.addEventListener('keydown',e=>{
   if(/^[0-9]$/.test(e.key)){ activeComposer.key(e.key); e.preventDefault(); }
   else if(e.key==='Backspace'){ activeComposer.backspace(); e.preventDefault(); }
   else if(e.key==='Enter'){ activeComposer.enter(); e.preventDefault(); }
+  else if(e.key==='ArrowLeft'){ activeComposer.left(); e.preventDefault(); }
+  else if(e.key==='ArrowRight'){ activeComposer.right(); e.preventDefault(); }
 });
 
 /* render helpers */
@@ -651,6 +755,7 @@ function resultVs(outcome){
   else if(outcome==='lose'){cls='lose'; title='COMPUTER WINS'; sub='It cracked your number first.';}
   else{cls='draw'; title='DRAW'; sub='Both numbers fell on the same turn.';}
   showResult({cls,title,sub,extra:reveal,buttons:[
+    {label:'Review board', fn:reviewVs},
     {label:'Rematch', primary:true, fn:restartVs},
     {label:'Main menu', fn:()=>show('screen-menu')},
     {label:'Quit', ghost:true, fn:quit},
@@ -765,6 +870,7 @@ async function challengeFailed(gaveUp){
   showResult({cls:'lose', title:'Be more logical next time',
     sub:`The number was ${ch?ch.secret:''}. Streak reset to 0.`,
     buttons:[
+      {label:'Review guesses', fn:reviewChallenge},
       {label:'Restart', primary:true, fn:startChallenge},
       {label:'Main menu', fn:()=>show('screen-menu')},
     ]});
@@ -777,6 +883,7 @@ function giveUp(mode){
     showResult({cls:'lose', title:'Be more logical next time',
       sub:`The hidden number was ${sp.secret}.`,
       buttons:[
+        {label:'Review guesses', fn:reviewSingle},
         {label:'New game', primary:true, fn:startSingle},
         {label:'Main menu', fn:()=>show('screen-menu')},
         {label:'Quit', ghost:true, fn:quit},
@@ -787,6 +894,7 @@ function giveUp(mode){
       sub:'You conceded the duel.',
       extra:vs?`<div class="reveal-line">Computer's number was <b>${vs.compSecret}</b></div>`:'',
       buttons:[
+        {label:'Review board', fn:reviewVs},
         {label:'Rematch', primary:true, fn:restartVs},
         {label:'Main menu', fn:()=>show('screen-menu')},
         {label:'Quit', ghost:true, fn:quit},
@@ -798,8 +906,35 @@ function giveUp(mode){
   }
 }
 
+/* =================== REVIEW (after a loss, study the board) =================== */
+function reviewSingle(){
+  targetHTML(document.getElementById('sp-target'), sp.secret.split(''));
+  if(spComposer) spComposer.setActive(false);
+  activeComposer=null;
+  show('screen-single');
+}
+function reviewVs(){
+  if(!vs) return;
+  vs.over=true;
+  targetHTML2('vs-comp-target', vs.compSecret.split(''));
+  if(vsGameComposer) vsGameComposer.setActive(false);
+  document.getElementById('vs-player-side').classList.remove('turn');
+  document.getElementById('vs-comp-side').classList.remove('turn');
+  document.getElementById('vs-status').textContent='Review — the number above was the computer\u2019s.';
+  activeComposer=null;
+  show('screen-vs-game');
+}
+function reviewChallenge(){
+  if(!ch) return;
+  targetHTML(document.getElementById('ch-target'), ch.secret.split(''));
+  if(chComposer) chComposer.setActive(false);
+  activeComposer=null;
+  show('screen-challenge');
+}
+
 /* =================== RESULT screen builder =================== */
 function showResult({cls,title,sub,extra,buttons}){
+  if(cls==='win') Sound.win(); else if(cls==='lose') Sound.lose(); else if(cls==='draw') Sound.draw();
   const body=document.getElementById('result-body');
   const btns=buttons.map((b,i)=>{
     const c = b.primary?'btn primary':(b.ghost?'btn ghost':'btn');
@@ -819,6 +954,8 @@ function showResult({cls,title,sub,extra,buttons}){
 
 /* boot */
 loadStreak();
+Sound.init().then(paintSound);
+document.addEventListener('pointerdown', ()=>{ if(Sound.on){ Sound.ensure(); Sound.startMusic(); } }, {once:true});
 </script>
 </body>
 </html>
